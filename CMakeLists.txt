@@ -7,23 +7,40 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Option for static builds
 option(BUILD_STATIC "Build statically" OFF)
 
+# Set up Qt MOC
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
 # Configure for static builds
 if(BUILD_STATIC AND WIN32)
+    # Static linking configuration
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib")
-    add_definitions(-DQT_STATICPLUGIN -DQT_STATIC)
     
-    # Force static linking
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MT /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+    # Define static plugin macros
+    add_compile_definitions(QT_STATICPLUGIN QT_STATIC)
+    
+    # Static linking flags
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+    
+    # Find Qt6 with static configuration
+    set(Qt6_DIR "C:/Qt6Static/lib/cmake/Qt6")
+    
+    # Force finding static libraries
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib")
 endif()
 
 # Find Qt6 components
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui)
 
-# Set up Qt MOC
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
+# Enable Qt features for static builds
+if(BUILD_STATIC AND WIN32)
+    # Import static plugins
+    qt6_import_plugins(${PROJECT_NAME}
+        INCLUDE Qt6::QWindowsIntegrationPlugin
+    )
+endif()
 
 # Source files
 set(SOURCES
@@ -58,23 +75,21 @@ if(WIN32)
     target_link_libraries(${PROJECT_NAME} user32)
     
     if(BUILD_STATIC)
-        # Import static plugins
-        qt6_import_plugins(${PROJECT_NAME} 
-            INCLUDE Qt6::QWindowsIntegrationPlugin
-        )
-        
         # Additional Windows libraries required for static Qt
         target_link_libraries(${PROJECT_NAME} 
-            # Qt dependencies
-            dwmapi uxtheme wtsapi32 imm32 winmm
-            ws2_32 iphlpapi crypt32 secur32 version
-            setupapi oleaut32 ole32 shell32 advapi32
-            kernel32 uuid gdi32 comdlg32 winspool
-            netapi32 userenv
-            # Direct3D and graphics
-            d3d11 dxgi d3dcompiler
-            # Additional Windows APIs
-            shlwapi comctl32 wininet urlmon
+            # Core Windows libraries
+            kernel32 user32 gdi32 winspool comdlg32 advapi32 shell32 
+            ole32 oleaut32 uuid odbc32 odbccp32
+            # Qt static dependencies  
+            dwmapi uxtheme wtsapi32 imm32 winmm ws2_32 iphlpapi 
+            crypt32 secur32 version setupapi netapi32 userenv
+            # Graphics and input
+            opengl32 glu32
+        )
+        
+        # Set target properties for static build
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup"
         )
     endif()
     

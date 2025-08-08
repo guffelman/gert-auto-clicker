@@ -34,13 +34,25 @@ jobs:
       uses: actions/checkout@v4
     
     # Windows-specific setup
+    - name: Setup MSVC (Windows)
+      if: matrix.name == 'windows'
+      uses: microsoft/setup-msbuild@v2
+      
     - name: Install Qt6 Static (Windows)
       if: matrix.name == 'windows'
+      shell: powershell
       run: |
-        # Download prebuilt static Qt6 binaries
-        curl -L -o qt6-static.zip https://github.com/cristianadam/qt6-cross-compile/releases/download/v6.5.0/qt6-windows-static-x64.zip
-        7z x qt6-static.zip -oC:\Qt6Static
-        dir C:\Qt6Static
+        # Download and install Qt6 static build
+        Invoke-WebRequest -Uri "https://download.qt.io/official_releases/qt/6.5/6.5.3/single/qt-everywhere-src-6.5.3.zip" -OutFile "qt-src.zip"
+        7z x qt-src.zip -oqt-src
+        cd qt-src/qt-everywhere-src-6.5.3
+        
+        # Configure Qt for static build
+        .\configure.bat -static -static-runtime -release -no-shared -no-opengl -no-dbus -no-ssl -no-pch -nomake examples -nomake tests -prefix C:\Qt6Static -platform win32-msvc
+        
+        # Build and install (this will take a while)
+        cmake --build . --parallel 4
+        cmake --install .
     
     # macOS-specific setup
     - name: Install Qt6 (macOS)
@@ -57,7 +69,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC=ON -DCMAKE_PREFIX_PATH=C:\Qt6Static
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC=ON -DCMAKE_PREFIX_PATH=C:\Qt6Static -DQT_QMAKE_EXECUTABLE=C:\Qt6Static\bin\qmake.exe
         
     - name: Configure CMake (macOS)
       if: matrix.name == 'macos'
@@ -72,7 +84,7 @@ jobs:
       if: matrix.name == 'windows'
       run: |
         cd build
-        cmake --build . --config Release
+        cmake --build . --config Release --parallel
         
     - name: Build (macOS)
       if: matrix.name == 'macos'
