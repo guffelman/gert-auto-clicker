@@ -11,11 +11,10 @@ option(BUILD_STATIC "Build statically" OFF)
 if(BUILD_STATIC AND WIN32)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib")
-    add_definitions(-DQT_STATICPLUGIN)
+    add_definitions(-DQT_STATICPLUGIN -DQT_STATIC)
     
     # Force static linking
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:msvcrt.lib")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MT /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 endif()
 
 # Find Qt6 components

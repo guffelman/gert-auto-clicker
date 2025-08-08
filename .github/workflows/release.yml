@@ -36,24 +36,11 @@ jobs:
     # Windows-specific setup
     - name: Install Qt6 Static (Windows)
       if: matrix.name == 'windows'
-      uses: jurplel/install-qt-action@v4
-      with:
-        version: '6.5.3'
-        host: 'windows'
-        target: 'desktop'
-        arch: 'win64_msvc2019_64'
-        modules: 'qtbase qtwidgets qtgui'
-        setup-python: false
-        
-    - name: Build Qt6 Static (Windows)
-      if: matrix.name == 'windows'
-      timeout-minutes: 90
       run: |
-        git clone --depth 1 --branch v6.5.3 https://github.com/qt/qt5.git qt6-static
-        cd qt6-static
-        .\configure.bat -static -static-runtime -release -no-shared -no-opengl -no-dbus -no-ssl -no-pch -nomake examples -nomake tests -prefix C:\Qt6Static
-        cmake --build . --parallel
-        cmake --install .
+        # Download prebuilt static Qt6 binaries
+        curl -L -o qt6-static.zip https://github.com/cristianadam/qt6-cross-compile/releases/download/v6.5.0/qt6-windows-static-x64.zip
+        7z x qt6-static.zip -oC:\Qt6Static
+        dir C:\Qt6Static
     
     # macOS-specific setup
     - name: Install Qt6 (macOS)
