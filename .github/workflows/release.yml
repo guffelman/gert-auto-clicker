@@ -1,0 +1,185 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build-all:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows
+            artifact: GertAutoClicker.exe
+            archive: gert-auto-clicker-windows.zip
+          - os: macos-latest
+            name: macos
+            artifact: GertAutoClicker
+            archive: gert-auto-clicker-macos.zip
+          - os: ubuntu-latest
+            name: linux
+            artifact: GertAutoClicker
+            archive: gert-auto-clicker-linux.zip
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    # Windows-specific setup
+    - name: Install Qt6 (Windows)
+      if: matrix.name == 'windows'
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: '6.5.0'
+        host: 'windows'
+        target: 'desktop'
+        arch: 'win64_mingw'
+        tools: 'tools_mingw90'
+        
+    - name: Set up MinGW (Windows)
+      if: matrix.name == 'windows'
+      uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: x64
+    
+    # macOS-specific setup
+    - name: Install Qt6 (macOS)
+      if: matrix.name == 'macos'
+      run: |
+        brew update
+        brew install qt@6
+        echo "/opt/homebrew/opt/qt@6/bin" >> $GITHUB_PATH
+    
+    # Linux-specific setup
+    - name: Install dependencies (Linux)
+      if: matrix.name == 'linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake qt6-base-dev qt6-tools-dev libx11-dev libxtst-dev
+    
+    # Build configuration
+    - name: Configure CMake (Windows)
+      if: matrix.name == 'windows'
+      run: |
+        mkdir build
+        cd build
+        cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+        
+    - name: Configure CMake (macOS)
+      if: matrix.name == 'macos'
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$(brew --prefix qt@6)"
+        
+    - name: Configure CMake (Linux)
+      if: matrix.name == 'linux'
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+    
+    # Build
+    - name: Build (Windows)
+      if: matrix.name == 'windows'
+      run: |
+        cd build
+        mingw32-make -j%NUMBER_OF_PROCESSORS%
+        
+    - name: Build (macOS)
+      if: matrix.name == 'macos'
+      run: |
+        cd build
+        make -j$(sysctl -n hw.ncpu)
+        
+    - name: Build (Linux)
+      if: matrix.name == 'linux'
+      run: |
+        cd build
+        make -j$(nproc)
+    
+    # Package executables
+    - name: Package executable (Windows)
+      if: matrix.name == 'windows'
+      run: |
+        cd build/bin
+        7z a ../../${{ matrix.archive }} ${{ matrix.artifact }}
+        
+    - name: Package executable (macOS/Linux)
+      if: matrix.name != 'windows'
+      run: |
+        cd build/bin
+        zip ../../${{ matrix.archive }} ${{ matrix.artifact }}
+    
+    # Upload artifacts
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-${{ matrix.name }}
+        path: ${{ matrix.archive }}
+
+  create-release:
+    needs: build-all
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+        
+    - name: Display structure of downloaded files
+      run: ls -la artifacts/
+      
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.event.inputs.version }}
+        name: Gert Auto Clicker ${{ github.event.inputs.version }}
+        prerelease: ${{ github.event.inputs.prerelease }}
+        generate_release_notes: true
+        body: |
+          ## Gert Auto Clicker ${{ github.event.inputs.version }}
+          
+          ### Downloads
+          
+          - **Windows**: Download `gert-auto-clicker-windows.zip`
+          - **macOS**: Download `gert-auto-clicker-macos.zip`
+          - **Linux**: Download `gert-auto-clicker-linux.zip`
+          
+          ### Installation
+          
+          1. Download the appropriate zip file for your platform
+          2. Extract the executable
+          3. Run the application
+          
+          ### Platform-specific notes
+          
+          **Windows**: May require administrator privileges for hotkey functionality
+          
+          **macOS**: Requires accessibility permissions in System Preferences > Security & Privacy > Privacy > Accessibility
+          
+          **Linux**: May need additional permissions for global hotkeys and mouse simulation
+          
+          ---
+          
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/previous-tag...${{ github.event.inputs.version }}
+        files: |
+          artifacts/release-windows/gert-auto-clicker-windows.zip
+          artifacts/release-macos/gert-auto-clicker-macos.zip
+          artifacts/release-linux/gert-auto-clicker-linux.zip

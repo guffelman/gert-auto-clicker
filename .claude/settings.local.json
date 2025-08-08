@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./build.sh:*)",
+      "Bash(rm:*)",
+      "Bash(true)",
+      "Bash(brew install:*)",
+      "Bash(export:*)",
+      "Bash(docker:*)"
+    ],
+    "deny": []
+  }
+}
