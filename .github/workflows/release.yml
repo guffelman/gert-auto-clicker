@@ -34,20 +34,26 @@ jobs:
       uses: actions/checkout@v4
     
     # Windows-specific setup
-    - name: Install vcpkg (Windows)
-      if: matrix.name == 'windows'
-      run: |
-        git clone https://github.com/Microsoft/vcpkg.git
-        cd vcpkg
-        .\bootstrap-vcpkg.bat
-        .\vcpkg integrate install
-        
     - name: Install Qt6 Static (Windows)
       if: matrix.name == 'windows'
-      timeout-minutes: 60
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: '6.5.3'
+        host: 'windows'
+        target: 'desktop'
+        arch: 'win64_msvc2019_64'
+        modules: 'qtbase qtwidgets qtgui'
+        setup-python: false
+        
+    - name: Build Qt6 Static (Windows)
+      if: matrix.name == 'windows'
+      timeout-minutes: 90
       run: |
-        cd vcpkg
-        .\vcpkg install qt6-base:x64-windows-static qt6-widgets:x64-windows-static qt6-gui:x64-windows-static
+        git clone --depth 1 --branch v6.5.3 https://github.com/qt/qt5.git qt6-static
+        cd qt6-static
+        .\configure.bat -static -static-runtime -release -no-shared -no-opengl -no-dbus -no-ssl -no-pch -nomake examples -nomake tests -prefix C:\Qt6Static
+        cmake --build . --parallel
+        cmake --install .
     
     # macOS-specific setup
     - name: Install Qt6 (macOS)
@@ -64,7 +70,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC=ON -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC=ON -DCMAKE_PREFIX_PATH=C:\Qt6Static
         
     - name: Configure CMake (macOS)
       if: matrix.name == 'macos'
