@@ -48,20 +48,6 @@ endif()
 # Find Qt6 components
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui)
 
-# Enable Qt features for static builds
-if(BUILD_STATIC AND WIN32)
-    # Import static plugins for complete standalone operation
-    qt6_import_plugins(${PROJECT_NAME}
-        INCLUDE 
-            Qt6::QWindowsIntegrationPlugin
-            Qt6::QWindowsVistaStylePlugin
-            Qt6::QModernWindowsStylePlugin
-        EXCLUDE_BY_TYPE
-            bearer
-            networkinformation
-    )
-endif()
-
 # Source files
 set(SOURCES
     src/main.cpp
@@ -88,6 +74,19 @@ target_link_libraries(${PROJECT_NAME}
     Qt6::Widgets
     Qt6::Gui
 )
+
+# Enable Qt features for static builds (must be after target creation)
+if(BUILD_STATIC AND WIN32)
+    # Import static plugins for complete standalone operation
+    qt6_import_plugins(${PROJECT_NAME}
+        INCLUDE 
+            Qt6::QWindowsIntegrationPlugin
+            Qt6::QWindowsVistaStylePlugin
+        EXCLUDE_BY_TYPE
+            bearer
+            networkinformation
+    )
+endif()
 
 # Platform-specific settings
 if(WIN32)
