@@ -79,7 +79,7 @@ jobs:
         choco install 7zip -y
         
         # Create self-extracting executable configuration
-        $configFile = @"
+        $configFile = @'
 ;!@Install@!UTF-8!
 Title="Gert Auto Clicker - Portable"
 BeginPrompt="Extract and run Gert Auto Clicker?"
@@ -94,7 +94,7 @@ OverwriteMode="2"
 ExecuteFile="GertAutoClicker.exe"
 ExecuteParameters=""
 ;!@InstallEnd@!
-"@
+'@
         
         # Save config to file
         $configFile | Out-File -FilePath "config.txt" -Encoding ASCII
