@@ -65,8 +65,18 @@ elseif(APPLE)
     
 elseif(UNIX)
     find_package(X11 REQUIRED)
-    target_link_libraries(${PROJECT_NAME} ${X11_LIBRARIES})
-    target_include_directories(${PROJECT_NAME} PRIVATE ${X11_INCLUDE_DIR})
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(XTST REQUIRED xtst)
+    
+    target_link_libraries(${PROJECT_NAME} 
+        ${X11_LIBRARIES} 
+        ${X11_Xtst_LIB}
+        ${XTST_LIBRARIES}
+    )
+    target_include_directories(${PROJECT_NAME} PRIVATE 
+        ${X11_INCLUDE_DIR}
+        ${XTST_INCLUDE_DIRS}
+    )
 endif()
 
 # Set output directory

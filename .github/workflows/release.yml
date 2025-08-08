@@ -20,13 +20,13 @@ jobs:
         include:
           - os: windows-latest
             name: windows
-            artifact: GertAutoClicker.exe
+            artifact: Release/GertAutoClicker.exe
             archive: gert-auto-clicker-windows.zip
           - os: macos-latest
             name: macos
             artifact: GertAutoClicker
             archive: gert-auto-clicker-macos.zip
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             name: linux
             artifact: GertAutoClicker
             archive: gert-auto-clicker-linux.zip
@@ -42,17 +42,10 @@ jobs:
       if: matrix.name == 'windows'
       uses: jurplel/install-qt-action@v4
       with:
-        version: '6.5.0'
+        version: '6.5.3'
         host: 'windows'
         target: 'desktop'
-        arch: 'win64_mingw'
-        tools: 'tools_mingw90'
-        
-    - name: Set up MinGW (Windows)
-      if: matrix.name == 'windows'
-      uses: egor-tensin/setup-mingw@v2
-      with:
-        platform: x64
+        arch: 'win64_msvc2019_64'
     
     # macOS-specific setup
     - name: Install Qt6 (macOS)
@@ -67,7 +60,7 @@ jobs:
       if: matrix.name == 'linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake qt6-base-dev qt6-tools-dev libx11-dev libxtst-dev
+        sudo apt-get install -y build-essential cmake qt6-base-dev qt6-tools-dev libx11-dev libxtst-dev libqt6core5compat6-dev
     
     # Build configuration
     - name: Configure CMake (Windows)
@@ -75,7 +68,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+        cmake .. -DCMAKE_BUILD_TYPE=Release
         
     - name: Configure CMake (macOS)
       if: matrix.name == 'macos'
@@ -96,7 +89,7 @@ jobs:
       if: matrix.name == 'windows'
       run: |
         cd build
-        mingw32-make -j%NUMBER_OF_PROCESSORS%
+        cmake --build . --config Release
         
     - name: Build (macOS)
       if: matrix.name == 'macos'

@@ -12,9 +12,14 @@
 #elif defined(Q_OS_MAC)
 #include <Carbon/Carbon.h>
 #else
+// Include Qt headers before X11 to avoid conflicts
+#include <QTimer>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <X11/extensions/XTest.h>
+#undef Status  // X11 defines Status, which conflicts with Qt
+#undef Bool    // X11 defines Bool, which can conflict with Qt
+#undef None    // X11 defines None, which can conflict with Qt
 #endif
 
 class HotkeyManager : public QObject
