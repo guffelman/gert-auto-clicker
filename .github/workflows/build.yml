@@ -78,26 +78,21 @@ jobs:
         # Install 7-Zip for creating self-extracting archive
         choco install 7zip -y
         
-        # Create self-extracting executable configuration
-        $configFile = @'
-;!@Install@!UTF-8!
-Title="Gert Auto Clicker - Portable"
-BeginPrompt="Extract and run Gert Auto Clicker?"
-CancelPrompt="Cancel extraction?"
-ExtractDialogText="Extracting Gert Auto Clicker..."
-ExtractPathText="Extract to:"
-ExtractTitle="Gert Auto Clicker Setup"
-GUIFlags="8+32+64+256+4096"
-GUIMode="1"
-InstallPath="%TEMP%\GertAutoClicker"
-OverwriteMode="2"
-ExecuteFile="GertAutoClicker.exe"
-ExecuteParameters=""
-;!@InstallEnd@!
-'@
-        
-        # Save config to file
-        $configFile | Out-File -FilePath "config.txt" -Encoding ASCII
+        # Create self-extracting executable configuration file
+        echo ';!@Install@!UTF-8!' > config.txt
+        echo 'Title="Gert Auto Clicker - Portable"' >> config.txt
+        echo 'BeginPrompt="Extract and run Gert Auto Clicker?"' >> config.txt
+        echo 'CancelPrompt="Cancel extraction?"' >> config.txt
+        echo 'ExtractDialogText="Extracting Gert Auto Clicker..."' >> config.txt
+        echo 'ExtractPathText="Extract to:"' >> config.txt
+        echo 'ExtractTitle="Gert Auto Clicker Setup"' >> config.txt
+        echo 'GUIFlags="8+32+64+256+4096"' >> config.txt
+        echo 'GUIMode="1"' >> config.txt
+        echo 'InstallPath="%TEMP%\GertAutoClicker"' >> config.txt
+        echo 'OverwriteMode="2"' >> config.txt
+        echo 'ExecuteFile="GertAutoClicker.exe"' >> config.txt
+        echo 'ExecuteParameters=""' >> config.txt
+        echo ';!@InstallEnd@!' >> config.txt
         
         # Create archive of all deployed files
         & "C:\Program Files\7-Zip\7z.exe" a -t7z "app.7z" "deploy\*"
