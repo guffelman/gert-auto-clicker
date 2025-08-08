@@ -73,13 +73,43 @@ jobs:
         echo "Deployment complete. Contents:"
         Get-ChildItem deploy -Recurse
         
-    - name: Create Portable Package
+    - name: Create Self-Extracting Portable Executable
       run: |
-        # Create a zip with all dependencies for true portability
-        Compress-Archive -Path deploy\* -DestinationPath GertAutoClicker-Windows-Portable.zip
+        # Install 7-Zip for creating self-extracting archive
+        choco install 7zip -y
         
-        echo "Package contents:"
-        Get-ChildItem GertAutoClicker-Windows-Portable.zip | Select-Object Name, Length
+        # Create self-extracting executable configuration
+        $configFile = @"
+;!@Install@!UTF-8!
+Title="Gert Auto Clicker - Portable"
+BeginPrompt="Extract and run Gert Auto Clicker?"
+CancelPrompt="Cancel extraction?"
+ExtractDialogText="Extracting Gert Auto Clicker..."
+ExtractPathText="Extract to:"
+ExtractTitle="Gert Auto Clicker Setup"
+GUIFlags="8+32+64+256+4096"
+GUIMode="1"
+InstallPath="%TEMP%\GertAutoClicker"
+OverwriteMode="2"
+ExecuteFile="GertAutoClicker.exe"
+ExecuteParameters=""
+;!@InstallEnd@!
+"@
+        
+        # Save config to file
+        $configFile | Out-File -FilePath "config.txt" -Encoding ASCII
+        
+        # Create archive of all deployed files
+        & "C:\Program Files\7-Zip\7z.exe" a -t7z "app.7z" "deploy\*"
+        
+        # Create self-extracting executable
+        cmd /c copy /b "C:\Program Files\7-Zip\7z.sfx" + config.txt + app.7z GertAutoClicker-Portable.exe
+        
+        echo "Self-extracting portable executable created:"
+        Get-ChildItem GertAutoClicker-Portable.exe | Select-Object Name, Length
+        
+        # Also create the traditional zip for comparison
+        Compress-Archive -Path deploy\* -DestinationPath GertAutoClicker-Windows-Bundle.zip
         
     - name: Verify Dependencies
       run: |
@@ -90,11 +120,13 @@ jobs:
           echo "dumpbin not available, skipping dependency check"
         }
         
-    - name: Upload Portable Windows Package
+    - name: Upload Portable Windows Executable
       uses: actions/upload-artifact@v4
       with:
         name: gert-auto-clicker-windows-portable
-        path: GertAutoClicker-Windows-Portable.zip
+        path: |
+          GertAutoClicker-Portable.exe
+          GertAutoClicker-Windows-Bundle.zip
 
   build-macos:
     runs-on: macos-latest
