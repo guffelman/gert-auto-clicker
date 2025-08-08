@@ -14,46 +14,63 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Install Qt6 Static
+    - name: Install Qt6
       uses: jurplel/install-qt-action@v4
       with:
         version: '6.6.0'
         host: 'windows'
         target: 'desktop'
-        arch: 'win64_msvc2019_64_static'
+        arch: 'win64_msvc2019_64'
         modules: ''
         
     - name: Setup MSVC
       uses: microsoft/setup-msbuild@v2
         
-    - name: Configure CMake for Static Build
+    - name: Configure CMake
       run: |
         mkdir build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC=ON
         
-    - name: Build Static Executable
+    - name: Build Executable  
       run: |
         cd build
         cmake --build . --config Release --parallel
         
-    - name: Verify Static Executable
+    - name: Deploy Qt Dependencies
       run: |
-        echo "Checking executable dependencies:"
-        Get-Command dumpbin -ErrorAction SilentlyContinue
-        if ($?) {
-          dumpbin /dependents build/bin/Release/GertAutoClicker.exe
+        # Create deployment directory
+        mkdir deploy
+        copy build\bin\Release\GertAutoClicker.exe deploy\
+        
+        # Use windeployqt to gather all Qt dependencies
+        & "$env:Qt6_DIR\..\..\..\bin\windeployqt.exe" --release --no-translations --no-system-d3d-compiler --no-opengl-sw deploy\GertAutoClicker.exe
+        
+        echo "Deployment complete. Contents:"
+        Get-ChildItem deploy -Recurse
+        
+    - name: Create Portable Package
+      run: |
+        # Create a zip with all dependencies for true portability
+        Compress-Archive -Path deploy\* -DestinationPath GertAutoClicker-Windows-Portable.zip
+        
+        echo "Package contents:"
+        Get-ChildItem GertAutoClicker-Windows-Portable.zip | Select-Object Name, Length
+        
+    - name: Verify Dependencies
+      run: |
+        echo "Checking main executable dependencies:"
+        if (Get-Command dumpbin -ErrorAction SilentlyContinue) {
+          dumpbin /dependents deploy\GertAutoClicker.exe
         } else {
           echo "dumpbin not available, skipping dependency check"
         }
-        echo "File size:"
-        Get-ChildItem build/bin/Release/GertAutoClicker.exe | Select-Object Name, Length
         
-    - name: Upload Windows Static Executable
+    - name: Upload Portable Windows Package
       uses: actions/upload-artifact@v4
       with:
-        name: gert-auto-clicker-windows-static
-        path: build/bin/Release/GertAutoClicker.exe
+        name: gert-auto-clicker-windows-portable
+        path: GertAutoClicker-Windows-Portable.zip
 
   build-macos:
     runs-on: macos-latest
