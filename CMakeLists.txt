@@ -4,6 +4,9 @@ project(GertAutoClicker VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Option for static builds
+option(BUILD_STATIC "Build statically" OFF)
+
 # Find Qt6 components
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 
@@ -43,10 +46,38 @@ if(WIN32)
     # Windows-specific libraries and settings
     target_link_libraries(${PROJECT_NAME} user32)
     
-    # Set Windows subsystem for GUI application
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        WIN32_EXECUTABLE TRUE
-    )
+    # Static linking configuration for Windows
+    if(BUILD_STATIC)
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            WIN32_EXECUTABLE TRUE
+            LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup"
+        )
+        
+        # Static runtime library
+        set_property(TARGET ${PROJECT_NAME} PROPERTY
+            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        
+        # Additional static libraries for Qt static builds
+        find_package(Qt6 REQUIRED COMPONENTS QWindowsIntegrationPlugin QWindowsVistaStylePlugin)
+        target_link_libraries(${PROJECT_NAME} 
+            Qt6::QWindowsIntegrationPlugin
+            Qt6::QWindowsVistaStylePlugin
+            dwmapi
+            uxtheme
+            wtsapi32
+            imm32
+            winmm
+            ws2_32
+            iphlpapi
+            crypt32
+            secur32
+        )
+    else()
+        # Set Windows subsystem for GUI application
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            WIN32_EXECUTABLE TRUE
+        )
+    endif()
     
     # Add icon resource if available
     if(EXISTS "${CMAKE_SOURCE_DIR}/resources/icon.rc")

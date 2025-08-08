@@ -6,7 +6,9 @@
       "Bash(true)",
       "Bash(brew install:*)",
       "Bash(export:*)",
-      "Bash(docker:*)"
+      "Bash(docker:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(gh workflow:*)"
     ],
     "deny": []
   }
