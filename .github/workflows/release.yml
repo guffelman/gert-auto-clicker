@@ -26,10 +26,6 @@ jobs:
             name: macos
             artifact: GertAutoClicker
             archive: gert-auto-clicker-macos.zip
-          - os: ubuntu-22.04
-            name: linux
-            artifact: GertAutoClicker
-            archive: gert-auto-clicker-linux.zip
     
     runs-on: ${{ matrix.os }}
     
@@ -55,12 +51,6 @@ jobs:
         brew install qt@6
         echo "/opt/homebrew/opt/qt@6/bin" >> $GITHUB_PATH
     
-    # Linux-specific setup
-    - name: Install dependencies (Linux)
-      if: matrix.name == 'linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential cmake qt6-base-dev qt6-tools-dev libx11-dev libxtst-dev libqt6core5compat6-dev
     
     # Build configuration
     - name: Configure CMake (Windows)
@@ -77,12 +67,6 @@ jobs:
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$(brew --prefix qt@6)"
         
-    - name: Configure CMake (Linux)
-      if: matrix.name == 'linux'
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release
     
     # Build
     - name: Build (Windows)
@@ -97,11 +81,6 @@ jobs:
         cd build
         make -j$(sysctl -n hw.ncpu)
         
-    - name: Build (Linux)
-      if: matrix.name == 'linux'
-      run: |
-        cd build
-        make -j$(nproc)
     
     # Package executables
     - name: Package executable (Windows)
@@ -153,7 +132,6 @@ jobs:
           
           - **Windows**: Download `gert-auto-clicker-windows.zip`
           - **macOS**: Download `gert-auto-clicker-macos.zip`
-          - **Linux**: Download `gert-auto-clicker-linux.zip`
           
           ### Installation
           
@@ -167,12 +145,9 @@ jobs:
           
           **macOS**: Requires accessibility permissions in System Preferences > Security & Privacy > Privacy > Accessibility
           
-          **Linux**: May need additional permissions for global hotkeys and mouse simulation
-          
           ---
           
           **Full Changelog**: https://github.com/${{ github.repository }}/compare/previous-tag...${{ github.event.inputs.version }}
         files: |
           artifacts/release-windows/gert-auto-clicker-windows.zip
           artifacts/release-macos/gert-auto-clicker-macos.zip
-          artifacts/release-linux/gert-auto-clicker-linux.zip
