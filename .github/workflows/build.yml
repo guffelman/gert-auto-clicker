@@ -14,29 +14,45 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Install Qt6
+    - name: Install Qt6 Static
       uses: jurplel/install-qt-action@v4
       with:
-        version: '6.5.3'
+        version: '6.6.0'
         host: 'windows'
         target: 'desktop'
-        arch: 'win64_msvc2019_64'
+        arch: 'win64_msvc2019_64_static'
+        modules: ''
         
-    - name: Configure CMake
+    - name: Setup MSVC
+      uses: microsoft/setup-msbuild@v2
+        
+    - name: Configure CMake for Static Build
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC=ON
         
-    - name: Build
+    - name: Build Static Executable
       run: |
         cd build
-        cmake --build . --config Release
+        cmake --build . --config Release --parallel
         
-    - name: Upload Windows executable
+    - name: Verify Static Executable
+      run: |
+        echo "Checking executable dependencies:"
+        Get-Command dumpbin -ErrorAction SilentlyContinue
+        if ($?) {
+          dumpbin /dependents build/bin/Release/GertAutoClicker.exe
+        } else {
+          echo "dumpbin not available, skipping dependency check"
+        }
+        echo "File size:"
+        Get-ChildItem build/bin/Release/GertAutoClicker.exe | Select-Object Name, Length
+        
+    - name: Upload Windows Static Executable
       uses: actions/upload-artifact@v4
       with:
-        name: gert-auto-clicker-windows
+        name: gert-auto-clicker-windows-static
         path: build/bin/Release/GertAutoClicker.exe
 
   build-macos:

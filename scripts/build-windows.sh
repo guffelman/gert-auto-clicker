@@ -10,6 +10,7 @@ set -e  # Exit on any error
 
 BUILD_TYPE="Release"
 CLEAN_BUILD=false
+BUILD_STATIC=true
 
 echo "🎯 Building Gert Auto Clicker for Windows from $(uname -s)..."
 echo "💡 For easier Windows builds, push to GitHub and use Actions"
@@ -21,6 +22,8 @@ show_usage() {
     echo "Options:"
     echo "  -debug            Build in Debug mode"
     echo "  -release          Build in Release mode (default)"
+    echo "  -static           Enable static build (default: ON)"
+    echo "  -dynamic          Disable static build"
     echo "  -clean            Clean build directory before building"
     echo "  -h, --help        Show this help message"
     echo ""
@@ -42,6 +45,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         -release)
             BUILD_TYPE="Release"
+            shift
+            ;;
+        -static)
+            BUILD_STATIC=true
+            shift
+            ;;
+        -dynamic)
+            BUILD_STATIC=false
             shift
             ;;
         -clean)
@@ -121,11 +132,20 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -st
 EOF
 
 # Configure with CMake
-echo "⚙️  Configuring with CMake for Windows cross-compilation..."
-cmake .. \
-    -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-    -DCMAKE_TOOLCHAIN_FILE=toolchain-windows.cmake \
+echo "⚙️  Configuring with CMake for Windows cross-compilation (Static: $BUILD_STATIC)..."
+
+# Prepare CMake options
+CMAKE_OPTIONS=(
+    -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+    -DCMAKE_TOOLCHAIN_FILE=toolchain-windows.cmake
     -DCMAKE_PREFIX_PATH="${QT_WINDOWS_PATH:-/usr/x86_64-w64-mingw32/qt6}"
+)
+
+if [ "$BUILD_STATIC" = true ]; then
+    CMAKE_OPTIONS+=(-DBUILD_STATIC=ON)
+fi
+
+cmake .. "${CMAKE_OPTIONS[@]}"
 
 # Check if cmake configuration was successful
 if [ $? -ne 0 ]; then

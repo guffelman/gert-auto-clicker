@@ -19,9 +19,9 @@ if not exist "build" (
 REM Navigate to build directory
 cd build
 
-REM Configure with CMake
-echo ⚙️  Configuring with CMake...
-cmake .. -DCMAKE_BUILD_TYPE=Release
+REM Configure with CMake for static build
+echo ⚙️  Configuring with CMake for static Qt6 build...
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC=ON
 
 REM Check if cmake was successful
 if errorlevel 1 (

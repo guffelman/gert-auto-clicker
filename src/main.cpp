@@ -9,6 +9,9 @@
 #include <QtPlugin>
 Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
 Q_IMPORT_PLUGIN(QWindowsVistaStylePlugin)
+#ifdef Q_OS_WIN
+Q_IMPORT_PLUGIN(QModernWindowsStylePlugin)
+#endif
 #endif
 
 MainWindow* g_mainWindow = nullptr;

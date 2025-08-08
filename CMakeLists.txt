@@ -21,11 +21,25 @@ if(BUILD_STATIC AND WIN32)
     # Define static plugin macros
     add_compile_definitions(QT_STATICPLUGIN QT_STATIC)
     
-    # Static linking flags
-    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+    # Static linking flags for MSVC
+    if(MSVC)
+        set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+    endif()
     
-    # Find Qt6 with static configuration
-    set(Qt6_DIR "C:/Qt6Static/lib/cmake/Qt6")
+    # Static linking flags for MinGW
+    if(MINGW)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+    endif()
+    
+    # Find Qt6 with static configuration - try common static Qt paths
+    if(EXISTS "C:/Qt6Static/lib/cmake/Qt6")
+        set(Qt6_DIR "C:/Qt6Static/lib/cmake/Qt6")
+    elseif(EXISTS "C:/Qt/6.6.0/msvc2019_64_static/lib/cmake/Qt6")
+        set(Qt6_DIR "C:/Qt/6.6.0/msvc2019_64_static/lib/cmake/Qt6")
+    elseif(EXISTS "C:/Qt/6.7.0/msvc2019_64_static/lib/cmake/Qt6")
+        set(Qt6_DIR "C:/Qt/6.7.0/msvc2019_64_static/lib/cmake/Qt6")
+    endif()
     
     # Force finding static libraries
     set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib")
@@ -36,9 +50,15 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui)
 
 # Enable Qt features for static builds
 if(BUILD_STATIC AND WIN32)
-    # Import static plugins
+    # Import static plugins for complete standalone operation
     qt6_import_plugins(${PROJECT_NAME}
-        INCLUDE Qt6::QWindowsIntegrationPlugin
+        INCLUDE 
+            Qt6::QWindowsIntegrationPlugin
+            Qt6::QWindowsVistaStylePlugin
+            Qt6::QModernWindowsStylePlugin
+        EXCLUDE_BY_TYPE
+            bearer
+            networkinformation
     )
 endif()
 
