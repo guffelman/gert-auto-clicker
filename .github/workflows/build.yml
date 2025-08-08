@@ -43,8 +43,32 @@ jobs:
         mkdir deploy
         copy build\bin\Release\GertAutoClicker.exe deploy\
         
-        # Use windeployqt to gather all Qt dependencies
-        & "$env:Qt6_DIR\..\..\..\bin\windeployqt.exe" --release --no-translations --no-system-d3d-compiler --no-opengl-sw deploy\GertAutoClicker.exe
+        # Find windeployqt.exe in Qt installation
+        $qtPath = $env:QT_ROOT_DIR
+        if (-not $qtPath) {
+          $qtPath = $env:Qt6_DIR + "\..\..\.."
+        }
+        $windeployqt = "$qtPath\bin\windeployqt.exe"
+        
+        echo "Qt path: $qtPath"
+        echo "Looking for windeployqt at: $windeployqt"
+        
+        if (Test-Path $windeployqt) {
+          echo "Found windeployqt, deploying Qt dependencies..."
+          & $windeployqt --release --no-translations --no-system-d3d-compiler --no-opengl-sw deploy\GertAutoClicker.exe
+        } else {
+          echo "windeployqt not found, searching in PATH..."
+          $windeployqtInPath = Get-Command windeployqt.exe -ErrorAction SilentlyContinue
+          if ($windeployqtInPath) {
+            echo "Found windeployqt in PATH: $($windeployqtInPath.Source)"
+            windeployqt.exe --release --no-translations --no-system-d3d-compiler --no-opengl-sw deploy\GertAutoClicker.exe
+          } else {
+            echo "ERROR: windeployqt.exe not found!"
+            echo "Available environment variables:"
+            Get-ChildItem env: | Where-Object {$_.Name -match "Qt|QT"} | Format-Table Name, Value
+            exit 1
+          }
+        }
         
         echo "Deployment complete. Contents:"
         Get-ChildItem deploy -Recurse
