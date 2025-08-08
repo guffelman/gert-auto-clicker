@@ -7,8 +7,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Option for static builds
 option(BUILD_STATIC "Build statically" OFF)
 
+# Configure Qt for static builds
+if(BUILD_STATIC AND WIN32)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib")
+    set(Qt6_STATIC ON)
+    add_definitions(-DQT_STATICPLUGIN)
+endif()
+
 # Find Qt6 components
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
+
+# For static builds, find additional components
+if(BUILD_STATIC AND WIN32)
+    find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui)
+    qt6_import_plugins(${PROJECT_NAME} INCLUDE Qt6::QWindowsIntegrationPlugin Qt6::QWindowsVistaStylePlugin)
+endif()
 
 # Set up Qt MOC
 set(CMAKE_AUTOMOC ON)
@@ -36,10 +49,18 @@ set(HEADERS
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
 # Link Qt libraries
-target_link_libraries(${PROJECT_NAME} 
-    Qt6::Core 
-    Qt6::Widgets
-)
+if(BUILD_STATIC AND WIN32)
+    target_link_libraries(${PROJECT_NAME} 
+        Qt6::Core 
+        Qt6::Widgets
+        Qt6::Gui
+    )
+else()
+    target_link_libraries(${PROJECT_NAME} 
+        Qt6::Core 
+        Qt6::Widgets
+    )
+endif()
 
 # Platform-specific settings
 if(WIN32)
@@ -58,10 +79,7 @@ if(WIN32)
             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
         
         # Additional static libraries for Qt static builds
-        find_package(Qt6 REQUIRED COMPONENTS QWindowsIntegrationPlugin QWindowsVistaStylePlugin)
         target_link_libraries(${PROJECT_NAME} 
-            Qt6::QWindowsIntegrationPlugin
-            Qt6::QWindowsVistaStylePlugin
             dwmapi
             uxtheme
             wtsapi32
@@ -71,6 +89,17 @@ if(WIN32)
             iphlpapi
             crypt32
             secur32
+            version
+            setupapi
+            oleaut32
+            ole32
+            shell32
+            advapi32
+            kernel32
+            uuid
+            gdi32
+            comdlg32
+            winspool
         )
     else()
         # Set Windows subsystem for GUI application

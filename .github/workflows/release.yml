@@ -47,7 +47,7 @@ jobs:
       timeout-minutes: 60
       run: |
         cd vcpkg
-        .\vcpkg install qt6-base:x64-windows-static qt6-widgets:x64-windows-static
+        .\vcpkg install qt6-base:x64-windows-static qt6-widgets:x64-windows-static qt6-gui:x64-windows-static
     
     # macOS-specific setup
     - name: Install Qt6 (macOS)
