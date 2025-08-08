@@ -76,7 +76,8 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 # Enable Qt features for static builds (must be after target creation)
-if(BUILD_STATIC AND WIN32)
+# Only import static plugins if we actually have a static Qt build
+if(BUILD_STATIC AND WIN32 AND QT_FEATURE_static)
     # Import static plugins for complete standalone operation
     qt6_import_plugins(${PROJECT_NAME}
         INCLUDE 
@@ -86,6 +87,12 @@ if(BUILD_STATIC AND WIN32)
             bearer
             networkinformation
     )
+    
+    message(STATUS "Static Qt6 build detected - importing static plugins")
+else()
+    if(BUILD_STATIC AND WIN32)
+        message(WARNING "BUILD_STATIC requested but Qt6 static libraries not available - using dynamic build with deployment")
+    endif()
 endif()
 
 # Platform-specific settings

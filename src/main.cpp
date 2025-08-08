@@ -5,7 +5,7 @@
 #include <QDebug>
 #include "mainwindow.h"
 
-#ifdef QT_STATIC
+#if defined(QT_STATIC) && defined(QT_FEATURE_static)
 #include <QtPlugin>
 Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
 Q_IMPORT_PLUGIN(QWindowsVistaStylePlugin)
